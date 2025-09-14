@@ -118,7 +118,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {products.map((product) => (
+                {product.map((product) => (
                   <tr key={product.id}>
                     <td className="whitespace-nowrap px-6 py-4">
                       <div

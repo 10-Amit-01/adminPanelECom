@@ -4,6 +4,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Login() {
+  function handleLogin(){
+    
+  }
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 font-sans">
       <div className="w-full max-w-md space-y-8 p-8">
@@ -62,7 +65,7 @@ export default function Login() {
               </a>
             </div>
 
-            <Button type="submit" className="w-full py-3">
+            <Button type="submit" className="w-full py-3" onClick={handleLogin}>
               Log In
             </Button>
           </form>
