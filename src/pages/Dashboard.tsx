@@ -21,21 +21,38 @@ const products = [
   },
 ];
 
+interface Product {
+  _id?: string | number;
+  name: string;
+  description: string;
+  price: string | number;
+  image?: string;
+}
+
+
 export default function Dashboard() {
-  const [product , setProduct] = useState(products);
+  const [product, setProduct] = useState<Product[]>(products);
+
+  function handleProductEdit(id: Product["_id"]) {
+    console.log(id);
+  }
+
+  function handleProductDelete(id: Product["_id"]) {
+    console.log(id);
+  }
 
   useEffect(() => {
-    async function fetchProducts(){
+    async function fetchProducts() {
       const response = await fetch("api");
       const data = await response.json();
-      if(response.ok){
+      if (response.ok) {
         setProduct(data);
-      }else{
-        console.log('failed to fetch data');
+      } else {
+        console.log("failed to fetch data");
       }
     }
     fetchProducts();
-  },[]);
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 text-gray-900">
@@ -119,7 +136,7 @@ export default function Dashboard() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {product.map((product) => (
-                  <tr key={product.id}>
+                  <tr key={product._id}>
                     <td className="whitespace-nowrap px-6 py-4">
                       <div
                         className="h-12 w-12 flex-shrink-0 rounded-md bg-cover bg-center"
@@ -137,12 +154,18 @@ export default function Dashboard() {
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-4">
-                        <button className="text-gray-500 hover:text-[var(--primary-color)]">
+                        <button
+                          className="text-gray-500 hover:text-[var(--primary-color)]"
+                          onClick={() => handleProductEdit(product._id)}
+                        >
                           <span className="material-symbols-outlined">
                             edit
                           </span>
                         </button>
-                        <button className="text-gray-500 hover:text-red-600">
+                        <button
+                          className="text-gray-500 hover:text-red-600"
+                          onClick={() => handleProductDelete(product._id)}
+                        >
                           <span className="material-symbols-outlined">
                             delete
                           </span>

@@ -2,11 +2,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useState } from "react";
+import { setCredentials } from "../store/authSlice";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "@/store/store";
+import { useLoginMutation } from "@/services/authApi";
 
 export default function Login() {
-  function handleLogin(){
-    
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<boolean>(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const [login, { isLoading }] = useLoginMutation();
+
+  async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    try {
+      const response = await login({ username, password }).unwrap();
+      localStorage.setItem("accessToken", response.accessToken);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      dispatch(
+        setCredentials({
+          accessToken: response.accessToken,
+          user: response.user,
+        })
+      );
+    } catch (err) {
+      console.log(err);
+      setError(true);
+    }
   }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 font-sans">
       <div className="w-full max-w-md space-y-8 p-8">
@@ -25,17 +52,26 @@ export default function Login() {
 
         {/* Form */}
         <div className="rounded-lg bg-white p-8 shadow-lg">
-          <form className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <Label htmlFor="email">Username or Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="Enter Email"
                 autoComplete="email"
                 className="mt-1 h-12"
+                name="username"
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                }}
                 required
               />
+              {error && (
+                <p className="text-red-500 text-xs ml-2 mt-2">
+                  Invalid username
+                </p>
+              )}
             </div>
 
             <div>
@@ -43,11 +79,20 @@ export default function Login() {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                name="password"
+                placeholder="Enter Password"
                 autoComplete="current-password"
                 className="mt-1 h-12"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                }}
                 required
               />
+              {error && (
+                <p className="text-red-500 text-xs ml-2 mt-2">
+                  Invalid password
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between">
@@ -65,7 +110,7 @@ export default function Login() {
               </a>
             </div>
 
-            <Button type="submit" className="w-full py-3" onClick={handleLogin}>
+            <Button type="submit" className="w-full py-3" disabled={isLoading}>
               Log In
             </Button>
           </form>

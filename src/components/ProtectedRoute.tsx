@@ -1,14 +1,18 @@
-import { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { type RootState } from "@/store/store";
+import { useEffect } from "react";
 
 export default function ProtectedRoutes() {
-  const isLoggedIn = localStorage.getItem("adminLoginAccessToken");
   const navigate = useNavigate();
+  const token = useSelector((state: RootState) => state.auth.accessToken);
 
-  // useEffect(() => {
-  //   if (!isLoggedIn) {
-  //     navigate("/login");
-  //   }
-  // }, [isLoggedIn, navigate]);
+  useEffect(() => {
+    const localToken = localStorage.getItem("accessToken");
+    if (!token && !localToken) {
+      navigate("/login");
+    }
+  }, [token, navigate]);
+
   return <Outlet />;
 }

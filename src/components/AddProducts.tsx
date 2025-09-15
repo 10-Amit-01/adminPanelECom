@@ -31,7 +31,7 @@ export default function AddProductModal() {
     description: "",
     price: "",
     category: "",
-    image: "",
+    image: '',
   });
 
   // Handle file upload
