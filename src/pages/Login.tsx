@@ -7,6 +7,7 @@ import { setCredentials } from "../store/authSlice";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/store/store";
 import { useLoginMutation } from "@/services/authApi";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const [username, setUsername] = useState<string>("");
@@ -14,20 +15,21 @@ export default function Login() {
   const [error, setError] = useState<boolean>(false);
   const dispatch = useDispatch<AppDispatch>();
   const [login, { isLoading }] = useLoginMutation();
+  const navigate = useNavigate();
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     try {
       const response = await login({ username, password }).unwrap();
-      localStorage.setItem("accessToken", response.accessToken);
-      localStorage.setItem("user", JSON.stringify(response.user));
+
       dispatch(
         setCredentials({
           accessToken: response.accessToken,
           user: response.user,
         })
       );
+      navigate('/');
     } catch (err) {
       console.log(err);
       setError(true);

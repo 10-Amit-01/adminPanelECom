@@ -6,7 +6,7 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-  accessToken: null,
+  accessToken: localStorage.getItem("accessToken") || null,
   user: null,
 };
 
@@ -20,6 +20,8 @@ const authSlice = createSlice({
     ) => {
       state.accessToken = action.payload.accessToken;
       state.user = action.payload.user;
+      localStorage.setItem("accessToken", state.accessToken);
+      localStorage.setItem("user", JSON.stringify(state.user));
     },
     logout: (state) => {
       state.accessToken = null;

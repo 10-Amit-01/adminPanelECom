@@ -8,8 +8,7 @@ export default function ProtectedRoutes() {
   const token = useSelector((state: RootState) => state.auth.accessToken);
 
   useEffect(() => {
-    const localToken = localStorage.getItem("accessToken");
-    if (!token && !localToken) {
+    if (!token) {
       navigate("/login");
     }
   }, [token, navigate]);
