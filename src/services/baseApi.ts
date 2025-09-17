@@ -13,17 +13,18 @@ const baseQuery = fetchBaseQuery({
   credentials: "include"
 });
 
-const baseQueryWithReauth: typeof baseQuery = async (args, api, extaOptions) => {
-  let result = await baseQuery(args, api, extaOptions);
+const baseQueryWithReauth: typeof baseQuery = async (args, api, extraOptions) => {
+  let result = await baseQuery(args, api, extraOptions);
 
-  if (result.error && result.error.status === 401) {
+  if (result.error && result.error.status === 403) {
+    console.log("Detected 403, calling refresh endpoint...");
 
-    const refreshRes = await baseQuery('/refresh', api, extaOptions);
-
+    const refreshRes = await baseQuery({ url: 'refresh', method: 'POST', credentials: 'include' }, api, extraOptions);
     if (refreshRes.data) {
-      const newToken = refreshRes.data as string;
+      const newToken = (refreshRes.data as { accessToken: string }).accessToken;
+
       api.dispatch(setCredentials({ accessToken: newToken, user: null }));
-      result = await baseQuery(args, api, extaOptions);
+      result = await baseQuery(args, api, extraOptions);
     } else {
       api.dispatch(logout());
     }
