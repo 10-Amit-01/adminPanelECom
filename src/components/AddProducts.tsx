@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,110 +19,148 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Trash } from "lucide-react";
+import { useAddProductMutation } from "@/services/productApi";
+
+interface Product {
+  _id?: string | number;
+  title: string;
+  description: string;
+  category: string;
+  price: string | number;
+  images: (string | File)[];
+}
 
 export default function AddProductModal() {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const [product, setProduct] = useState({
-    name: "",
+  const [product, setProduct] = useState<Product>({
+    _id: Math.random(),
+    title: "",
+    category: "",
     description: "",
     price: "",
-    category: "",
-    image: '',
+    images: [],
   });
 
-  // Handle file upload
+  const [addProduct, { isLoading }] = useAddProductMutation();
+
+  // Handle multiple file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setProduct({ ...product, image: file });
+    const files = e.target.files;
+    if (files) {
+      setProduct({
+        ...product,
+        images: [...product.images, ...Array.from(files)],
+      });
     }
   };
 
+  // Remove image from preview
+  const removeImage = (index: number) => {
+    const updatedImages = product.images.filter((_, i) => i !== index);
+    setProduct({ ...product, images: updatedImages });
+  };
+
   const handleAddProduct = async () => {
-    try {
-      setLoading(true);
+    const formData = new FormData();
+    formData.append("title", product.title);
+    formData.append("category", product.category);
+    formData.append("description", product.description);
+    formData.append("price", product.price.toString());
 
-      const formData = new FormData();
-      formData.append("name", product.name);
-      formData.append("description", product.description);
-      formData.append("price", product.price);
-      formData.append("category", product.category);
-      if (product.image) formData.append("image", product.image);
+    product.images.forEach((img) => formData.append("images", img));
 
-      const res = await fetch("http://localhost:8080/admin/add-prod", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Failed to add product");
-
-      const data = await res.json();
-      console.log("✅ Product added:", data);
-
-      // Reset form + close modal
-      setProduct({ name: "", description: "", price: "", category: "", image: "" });
-      setOpen(false);
-    } catch (err) {
-      console.error("❌ Error adding product:", err);
-    } finally {
-      setLoading(false);
-    }
+    await addProduct(formData).unwrap();
+    setOpen(false);
+    setProduct({
+      _id: Math.random(),
+      title: "",
+      category: "",
+      description: "",
+      price: "",
+      images: [],
+    });
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2">
-          <Plus/> Add Product
+          <Plus /> Add Product
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-3xl" aria-describedby={undefined}>
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>
-          <DialogDescription>Fill in details to add a new product.</DialogDescription>
+          <DialogDescription>
+            Fill in details to add a new product.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-4">
           {/* Image Upload */}
           <div className="lg:col-span-1">
-            <div className="bg-gray-100 rounded-lg aspect-square flex items-center justify-center mb-4">
-              {product.image ? (
-                <img
-                  src={typeof product.image === "string" ? product.image : URL.createObjectURL(product.image)}
-                  alt="Preview"
-                  className="w-full h-full object-cover rounded-lg"
-                />
+            <div className="bg-gray-100 rounded-lg aspect-square flex flex-wrap gap-2 p-2 mb-4">
+              {product.images.length > 0 ? (
+                product.images.map((img, idx) => (
+                  <div key={idx} className="relative w-20 h-20">
+                    <img
+                      src={
+                        typeof img === "string" ? img : URL.createObjectURL(img)
+                      }
+                      alt={`Preview ${idx}`}
+                      className="w-full h-full object-cover rounded-md"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-0 right-0 bg-white rounded-full p-1 text-red-500 shadow"
+                    >
+                      <Trash size={14} />
+                    </button>
+                  </div>
+                ))
               ) : (
                 <span className="text-gray-400">No Image</span>
               )}
             </div>
-            <Input type="file" accept="image/*" onChange={handleFileChange} />
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+            />
           </div>
 
           {/* Product Details */}
           <div className="lg:col-span-2 space-y-4">
             <Input
               placeholder="Product Name"
-              value={product.name}
-              onChange={(e) => setProduct({ ...product, name: e.target.value })}
+              value={product.title}
+              onChange={(e) =>
+                setProduct({ ...product, title: e.target.value })
+              }
             />
             <Textarea
               placeholder="Description"
               value={product.description}
-              onChange={(e) => setProduct({ ...product, description: e.target.value })}
+              onChange={(e) =>
+                setProduct({ ...product, description: e.target.value })
+              }
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 placeholder="Price"
                 value={product.price}
-                onChange={(e) => setProduct({ ...product, price: e.target.value })}
+                onChange={(e) =>
+                  setProduct({ ...product, price: e.target.value })
+                }
               />
               <Select
-                onValueChange={(value) => setProduct({ ...product, category: value })}
+                onValueChange={(value) =>
+                  setProduct({ ...product, category: value })
+                }
                 value={product.category}
               >
                 <SelectTrigger>
@@ -146,9 +183,9 @@ export default function AddProductModal() {
           <Button
             className="bg-blue-600 text-white hover:bg-blue-700"
             onClick={handleAddProduct}
-            disabled={loading}
+            disabled={isLoading}
           >
-            {loading ? "Adding..." : "Add Product"}
+            {isLoading ? "Adding..." : "Add Product"}
           </Button>
         </DialogFooter>
       </DialogContent>

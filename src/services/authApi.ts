@@ -8,9 +8,24 @@ export const authApi = baseApi.injectEndpoints({
         method: "POST",
         body: credentials
       })
+    }),
+    refresh: builder.mutation<{ accessToken: string }, void>({
+      query: () => ({
+        url: 'refresh',
+        method: "POST",
+        credentials: "include"
+      })
+    }),
+
+    logout: builder.mutation<{message : string}, void>({
+      query: () => ({
+        url: 'logout',
+        method: "POST",
+        credentials: "include"
+      })
     })
   }),
-  overrideExisting:false
+  overrideExisting: false
 });
 
-export const {useLoginMutation} = authApi;
+export const { useLoginMutation, useLogoutMutation } = authApi;

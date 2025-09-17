@@ -12,6 +12,8 @@ export default function ProtectedRoutes() {
       navigate("/login");
     }
   }, [token, navigate]);
+  
+  if(!token) return null;
 
   return <Outlet />;
 }
