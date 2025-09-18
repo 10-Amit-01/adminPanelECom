@@ -1,14 +1,20 @@
 import AddProductModal from "@/components/AddProducts";
 import { Input } from "@/components/ui/input";
-import { useGetProductsQuery } from "../services/productApi";
+import {
+  useDeleteProductsMutation,
+  useGetProductsQuery,
+} from "../services/productApi";
 import { useDispatch } from "react-redux";
 import { logout } from "../store/authSlice";
 import { useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../services/authApi";
 import { useState } from "react";
-import { ChevronsLeft, ChevronsRight } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Plus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+
 interface Product {
-  _id?: string | number;
+  id: number;
   title: string;
   description: string;
   category: string;
@@ -18,18 +24,41 @@ interface Product {
 
 export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const { data, isLoading, error } = useGetProductsQuery({ page: currentPage });
+
+  const {
+    data,
+    isLoading: productLoading,
+    isFetching,
+    error,
+    refetch
+  } = useGetProductsQuery({ page: currentPage });
+
+  const [deleteProduct, { isLoading: ProdDelLoad }] =
+    useDeleteProductsMutation();
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [logoutAdmin, { isLoading: logoutLoading }] = useLogoutMutation();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  function handleProductEdit(id: Product["_id"]) {
-    console.log(id);
-    console.log(isLoading);
+  async function handleProductDelete(id: number) {
+    try {
+      await deleteProduct(id).unwrap();
+      refetch();
+    } catch (err) {
+      console.error("Delete failed", err);
+    }
   }
 
-  function handleProductDelete(id: Product["_id"]) {
-    console.log(id);
+  function handleProductEdit(product: Product) {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  }
+
+  function handleAddProduct() {
+    setSelectedProduct(null); // ensure no prefill
+    setIsModalOpen(true);
   }
 
   async function handleLogout() {
@@ -40,17 +69,21 @@ export default function Dashboard() {
     }
   }
 
-  async function prevPage() {
+  function prevPage() {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
   }
 
   function nextPage() {
-    console.log("as", currentPage);
     if (data && currentPage < data.totalPages) {
       setCurrentPage(currentPage + 1);
     }
+  }
+
+  function getImage(product : Product){
+    console.log( product.title,' ', product.images);
+    return product.images[0];
   }
 
   return (
@@ -101,7 +134,19 @@ export default function Dashboard() {
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-3xl font-bold">Products</h2>
-            <AddProductModal />
+            <AddProductModal
+              mode={selectedProduct ? "edit" : "add"}
+              open={isModalOpen}
+              setOpen={setIsModalOpen}
+              initialData={selectedProduct || undefined}
+              reload={refetch}
+            />
+            <Button
+              className="bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2"
+              onClick={handleAddProduct}
+            >
+              <Plus /> Add Product
+            </Button>
           </div>
 
           {/* Search */}
@@ -113,7 +158,13 @@ export default function Dashboard() {
           </div>
 
           {/* Table */}
-          {error && <p>Something went wrong...</p>}
+          {error && (
+            <p className="text-red-500 my-4">
+              {typeof error === "string"
+                ? error
+                : "⚠️ Failed to load products. Please try again."}
+            </p>
+          )}
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -136,59 +187,102 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {data?.products.map((product: Product) => (
-                  <tr key={product._id}>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <div
-                        className="h-12 w-12 flex-shrink-0 rounded-md bg-cover bg-center"
-                        style={{ backgroundImage: `url(${product.images[0]})` }}
-                      />
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                      {product.title}
-                    </td>
-                    <td className="max-w-xs truncate px-6 py-4 text-sm text-gray-500">
-                      {product.description}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      ${product.price}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-4">
-                        <button
-                          className="text-gray-500 hover:text-[var(--primary-color)]"
-                          onClick={() => handleProductEdit(product._id)}
-                        >
-                          <span className="material-symbols-outlined">
-                            edit
-                          </span>
-                        </button>
-                        <button
-                          className="text-gray-500 hover:text-red-600"
-                          onClick={() => handleProductDelete(product._id)}
-                        >
-                          <span className="material-symbols-outlined">
-                            delete
-                          </span>
-                        </button>
-                      </div>
+                {(productLoading || isFetching) &&
+                  [...Array(5)].map((_, idx) => (
+                    <tr key={idx}>
+                      <td className="px-6 py-4">
+                        <Skeleton className="h-12 w-12 rounded-md" />
+                      </td>
+                      <td className="px-6 py-4">
+                        <Skeleton className="h-4 w-24" />
+                      </td>
+                      <td className="px-6 py-4">
+                        <Skeleton className="h-4 w-48" />
+                      </td>
+                      <td className="px-6 py-4">
+                        <Skeleton className="h-4 w-16" />
+                      </td>
+                      <td className="px-6 py-4">
+                        <Skeleton className="h-4 w-16" />
+                      </td>
+                    </tr>
+                  ))}
+
+                {!productLoading &&
+                  data?.products?.map((product: Product) => (
+                    <tr key={product.id}>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <img
+                          src={getImage(product) as string}
+                          className="h-12 w-12 flex-shrink-0 rounded-md bg-cover bg-center"
+                        />
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                        {product.title}
+                      </td>
+                      <td className="max-w-xs truncate px-6 py-4 text-sm text-gray-500">
+                        {product.description}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                        ${product.price}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-4">
+                          <button
+                            className="text-gray-500 hover:text-[var(--primary-color)]"
+                            onClick={() => handleProductEdit(product)}
+                            disabled={ProdDelLoad}
+                          >
+                            <span className="material-symbols-outlined">
+                              edit
+                            </span>
+                          </button>
+                          <button
+                            className="text-gray-500 hover:text-red-600"
+                            onClick={() => {
+                              console.log(product.id);
+                              handleProductDelete(product.id);
+                            }}
+                            disabled={ProdDelLoad}
+                          >
+                            {ProdDelLoad ? (
+                              <span className="text-sm">Deleting...</span>
+                            ) : (
+                              <span className="material-symbols-outlined">
+                                delete
+                              </span>
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+
+                {!productLoading && data?.products?.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center py-6 text-gray-500">
+                      No products found
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
           <div className="flex items-center justify-center gap-4 mt-4">
             <button
               onClick={prevPage}
-              className="flex items-center gap-2 hover:cursor-pointer"
+              disabled={currentPage === 1}
+              className="flex items-center gap-2 hover:cursor-pointer disabled:opacity-50"
             >
               <ChevronsLeft />
               <span className="text-lg">Prev</span>
             </button>
             <button
               onClick={nextPage}
-              className="flex items-center gap-2 hover:cursor-pointer"
+              disabled={data && currentPage >= data.totalPages}
+              className="flex items-center gap-2 hover:cursor-pointer disabled:opacity-50"
             >
               <span className="text-lg">Next</span>
               <ChevronsRight />

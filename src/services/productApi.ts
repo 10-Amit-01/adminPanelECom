@@ -1,7 +1,7 @@
 import { baseApi } from "./baseApi";
 
 interface Product {
-  _id?: string | number;
+  id: number;
   title: string;
   description: string;
   category: string;
@@ -22,13 +22,20 @@ export const productApi = baseApi.injectEndpoints({
         body: formdata
       }),
     }),
-    deleteProducts: builder.mutation<void, { id: string | number }>({
+    deleteProducts: builder.mutation<void, number>({
       query: (id) => ({
-        url: `delete/${id}`,
-        method: 'POST',
+        url: `products/${id}`,
+        method: 'DELETE',
+      })
+    }),
+    editProduct: builder.mutation<Product, { id: number, data : FormData }>({
+      query: ({id,data}) => ({
+        url: `products/${id}`,
+        method: 'PUT',
+        body: data
       })
     })
   }),
 });
 
-export const { useGetProductsQuery, useAddProductMutation, useDeleteProductsMutation } = productApi;
+export const { useGetProductsQuery, useAddProductMutation, useDeleteProductsMutation, useEditProductMutation } = productApi;

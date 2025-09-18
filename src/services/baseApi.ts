@@ -17,8 +17,6 @@ const baseQueryWithReauth: typeof baseQuery = async (args, api, extraOptions) =>
   let result = await baseQuery(args, api, extraOptions);
 
   if (result.error && result.error.status === 403) {
-    console.log("Detected 403, calling refresh endpoint...");
-
     const refreshRes = await baseQuery({ url: 'refresh', method: 'POST', credentials: 'include' }, api, extraOptions);
     if (refreshRes.data) {
       const newToken = (refreshRes.data as { accessToken: string }).accessToken;
