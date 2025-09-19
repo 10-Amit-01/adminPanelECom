@@ -1,7 +1,7 @@
 # 📦 Admin Panel (React + Redux Toolkit + Node.js + MongoDB)
 
 A full-stack **Admin Panel** application with authentication and product management.  
-Built using **React, Redux Toolkit Query, Node.js, Express, and MongoDB**.  
+Built using **React, Redux Toolkit Query, Node.js, Express**.  
 
 ---
 
@@ -17,7 +17,7 @@ Built using **React, Redux Toolkit Query, Node.js, Express, and MongoDB**.
 
 ## ⚙️ Tech Stack
 **Frontend:** React (Vite + TypeScript), Redux Toolkit, RTK Query, Tailwind CSS  
-**Backend:** Node.js, Express.js, MongoDB (Mongoose)  
+**Backend:** Node.js, Express.js  
 **Auth:** JWT with HttpOnly cookies  
 
 ---
@@ -108,6 +108,7 @@ Runs on: [http://localhost:5173](http://localhost:5173)
 
 ## ✅ To-Do
 - [ ] Role-based access control (admin/user)  
+- [ ] Use MongoDb to store products  
 - [ ] Deployment (Vercel + Render/Heroku)  
 - [ ] Global error notifications  
 
